@@ -46,14 +46,6 @@ add_git_dependency(
     1.0.1
 )
 
-FetchContent_Declare(
-    stb
-    GIT_REPOSITORY  https://github.com/nothings/stb
-    GIT_SHALLOW     TRUE
-    GIT_PROGRESS    TRUE
-)
-FetchContent_MakeAvailable(stb)
-
 option(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
 option(ASSIMP_BUILD_SAMPLES OFF)
 option(ASSIMP_BUILD_TESTS OFF)
@@ -65,6 +57,8 @@ add_git_dependency(
     v6.0.2
 )
 
+find_package(OpenGL REQUIRED)
+
 #####################################################################
 #                        EXECUTABLE SETUP
 #####################################################################
@@ -74,9 +68,9 @@ set(PROJECT_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/src/")
 
 add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES})
-target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_INCLUDE})
+target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_INCLUDE} "${CMAKE_CURRENT_LIST_DIR}/lib/")
 
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw glad glm stb assimp)
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw glad glm assimp OpenGL::GL)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/")
 
