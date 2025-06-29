@@ -18,6 +18,18 @@ void processInput(GLFWwindow* window)
     }
 }
 
+float vertices[]{
+    -0.5f,
+    -0.5f,
+    0.0f,
+    0.5f,
+    -0.5f,
+    0.0f,
+    0.0f,
+    0.5f,
+    0.0f,
+};
+
 int main()
 {
     glfwInit();
@@ -42,6 +54,12 @@ int main()
 
     glViewport(0, 0, 800, 600);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    unsigned int vbo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
 
     while (!glfwWindowShouldClose(window))
     {
