@@ -10,25 +10,33 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
+bool wireframeMode{false};
 void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_Q))
     {
         glfwSetWindowShouldClose(window, true);
     }
+    if (glfwGetKey(window, GLFW_KEY_SPACE))
+    {
+        wireframeMode = !wireframeMode;
+        glPolygonMode(GL_FRONT_AND_BACK, wireframeMode ? GL_LINE : GL_FILL);
+    }
 }
 
+// clang-format off
 float vertices[]{
-    -0.5f,
-    -0.5f,
-    0.0f,
-    0.5f,
-    -0.5f,
-    0.0f,
-    0.0f,
-    0.5f,
-    0.0f,
+    -0.5f, -0.5f, 0.0f, // bottom left
+    0.5f, -0.5f, 0.0f, // bottom right
+    0.0f, 0.5f, 0.0f, // top middle
+    0.5f, 0.5f, 0.5f, // top right
 };
+
+unsigned int indices[]{
+    0, 1, 2,
+    2, 3, 1,
+};
+// clang-format on
 
 const char* vertexShaderSource =
     "#version 330 core\n"
@@ -78,8 +86,15 @@ int main()
     unsigned int vbo;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
     glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
+
+    unsigned int ebo;
+    glGenBuffers(1, &ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 sizeof indices,
+                 indices,
+                 GL_STATIC_DRAW);
 
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -129,8 +144,6 @@ int main()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    glUseProgram(shaderProgram);
-
     glVertexAttribPointer(0,
                           3,
                           GL_FLOAT,
@@ -138,6 +151,9 @@ int main()
                           3 * sizeof(float),
                           (void*)0);
     glEnableVertexAttribArray(0);
+
+    // wireframe mode
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -147,7 +163,8 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
         glUseProgram(shaderProgram);
         glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
