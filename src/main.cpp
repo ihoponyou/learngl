@@ -1,4 +1,5 @@
 // clang-format off
+#include <cmath>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 // clang-format on
@@ -26,10 +27,10 @@ void processInput(GLFWwindow* window)
 
 // clang-format off
 float vertices[]{
-    -0.5f, -0.5f, 0.0f, // bottom left
-    0.5f, -0.5f, 0.0f, // bottom right
-    0.0f, 0.5f, 0.0f, // top middle
-    0.5f, 0.5f, 0.5f, // top right
+    // position             // color
+    -0.5f,  -0.5f,  0.0f,   1.0f, 0.0f, 0.0f, // bottom left
+    0.5f,   -0.5f,  0.0f,   0.0f, 1.0f, 0.0f, // bottom right
+    0.0f,   0.5f,   0.0f,   0.0f, 0.0f, 1.0f, // top middle
 };
 
 unsigned int indices[]{
@@ -38,21 +39,23 @@ unsigned int indices[]{
 };
 // clang-format on
 
-const char* vertexShaderSource =
-    "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-    "}\0";
+const char* vertexShaderSource = "#version 330 core\n"
+                                 "layout (location = 0) in vec3 aPos;\n"
+                                 "layout (location = 1) in vec3 aColor;\n"
+                                 "out vec3 vertexColor;\n"
+                                 "void main()\n"
+                                 "{\n"
+                                 "   gl_Position = vec4(aPos, 1.0);\n"
+                                 "   vertexColor = aColor;\n"
+                                 "}\0";
 
-const char* fragmentShaderSource =
-    "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "void main()\n"
-    "{\n"
-    "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-    "}\0";
+const char* fragmentShaderSource = "#version 330 core\n"
+                                   "in vec3 vertexColor;\n"
+                                   "out vec4 FragColor;\n"
+                                   "void main()\n"
+                                   "{\n"
+                                   "    FragColor = vec4(vertexColor, 1.0f);\n"
+                                   "}\0";
 
 int main()
 {
@@ -78,6 +81,11 @@ int main()
 
     glViewport(0, 0, 800, 600);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    int numberOfAttributes{0};
+    glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE, &numberOfAttributes);
+    std::cout << "your hardware supports " << numberOfAttributes
+              << " vertex attributes" << std::endl;
 
     unsigned int vao;
     glGenVertexArrays(1, &vao);
@@ -148,9 +156,16 @@ int main()
                           3,
                           GL_FLOAT,
                           GL_FALSE,
-                          3 * sizeof(float),
+                          6 * sizeof(float),
                           (void*)0);
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1,
+                          3,
+                          GL_FLOAT,
+                          GL_FALSE,
+                          6 * sizeof(float),
+                          (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     // wireframe mode
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -159,12 +174,27 @@ int main()
     {
         processInput(window);
 
-        glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
         glUseProgram(shaderProgram);
+
+        // float time = glfwGetTime();
+        // float green = (std::sin(time * 5.0f) / 2.0f) + 0.5f;
+        // int vertexColorLocation =
+        //     glGetUniformLocation(shaderProgram, "ourColor");
+        // if (vertexColorLocation == -1)
+        // {
+        //     std::cout
+        //         << "error: could not find location of uniform \"ourColor\""
+        //         << std::endl;
+        //     return -1;
+        // }
+        // glUniform4f(vertexColorLocation, 0.0f, green, 0.0f, 1.0f);
+
         glBindVertexArray(vao);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // glBindVertexArray(0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
