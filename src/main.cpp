@@ -5,6 +5,9 @@
 // clang-format on
 #include <iostream>
 #include <ostream>
+#include <string>
+
+#include "shader.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -39,26 +42,10 @@ unsigned int indices[]{
 };
 // clang-format on
 
-const char* vertexShaderSource = "#version 330 core\n"
-                                 "layout (location = 0) in vec3 aPos;\n"
-                                 "layout (location = 1) in vec3 aColor;\n"
-                                 "out vec3 vertexColor;\n"
-                                 "void main()\n"
-                                 "{\n"
-                                 "   gl_Position = vec4(aPos, 1.0);\n"
-                                 "   vertexColor = aColor;\n"
-                                 "}\0";
-
-const char* fragmentShaderSource = "#version 330 core\n"
-                                   "in vec3 vertexColor;\n"
-                                   "out vec4 FragColor;\n"
-                                   "void main()\n"
-                                   "{\n"
-                                   "    FragColor = vec4(vertexColor, 1.0f);\n"
-                                   "}\0";
-
-int main()
+int main(int argc, char* argv[])
 {
+    std::string pathToExe(argv[0]);
+    std::string pathToExeDir = pathToExe.substr(0, pathToExe.find_last_of('/'));
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -82,11 +69,6 @@ int main()
     glViewport(0, 0, 800, 600);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    int numberOfAttributes{0};
-    glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE, &numberOfAttributes);
-    std::cout << "your hardware supports " << numberOfAttributes
-              << " vertex attributes" << std::endl;
-
     unsigned int vao;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
@@ -104,53 +86,8 @@ int main()
                  indices,
                  GL_STATIC_DRAW);
 
-    unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-
-    int success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "error: failed to compile vertex shader" << infoLog
-                  << std::endl;
-        return -1;
-    }
-
-    unsigned int fragmentShader;
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "error: failed to compile fragment shader" << infoLog
-                  << std::endl;
-        return -1;
-    }
-
-    unsigned int shaderProgram;
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "error: failed to link shaders to program" << infoLog
-                  << std::endl;
-        return -1;
-    }
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    // works since cmake copies shaders/ into build/
+    Shader shader("shaders/shader.vs", "shaders/shader.fs");
 
     glVertexAttribPointer(0,
                           3,
@@ -177,24 +114,12 @@ int main()
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shaderProgram);
-
-        // float time = glfwGetTime();
-        // float green = (std::sin(time * 5.0f) / 2.0f) + 0.5f;
-        // int vertexColorLocation =
-        //     glGetUniformLocation(shaderProgram, "ourColor");
-        // if (vertexColorLocation == -1)
-        // {
-        //     std::cout
-        //         << "error: could not find location of uniform \"ourColor\""
-        //         << std::endl;
-        //     return -1;
-        // }
-        // glUniform4f(vertexColorLocation, 0.0f, green, 0.0f, 1.0f);
+        shader.use();
+        shader.setFloat("xOffset", 0.5f);
 
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, 3);
-        // glBindVertexArray(0);
+        glBindVertexArray(0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

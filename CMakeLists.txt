@@ -75,6 +75,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE glfw glad glm assimp OpenGL::GL)
 target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/")
 
 #####################################################################
+#                        RESOURCE SETUP
+#####################################################################
+file(COPY "${CMAKE_CURRENT_LIST_DIR}/src/shaders" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+
+#####################################################################
 #                        PACKAGE SETUP
 #####################################################################
 
