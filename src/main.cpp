@@ -1,18 +1,35 @@
-// clang-format off
-#include <cmath>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-// clang-format on
 #include <iostream>
 #include <ostream>
 #include <string>
+// clang-format off
+#include "glad/glad.h"
+#include "GLFW/glfw3.h"
+// clang-format on
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
 
 #include "shader.h"
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}
+// clang-format off
+float vertices[]{
+    // position             // color            // texture
+    0.5f,   0.5f,   0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
+    0.5f,   -0.5f,  0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+    -0.5f,  -0.5f,  0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
+    -0.5f,   0.5f,  0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f, // top left
+};
+
+unsigned int indices[]{
+    0, 1, 3,
+    3, 2, 1,
+};
+
+float textureCoordinates[]{
+    0.0f, 0.0f, // bottom left
+    1.0f, 0.0f, // bottom right
+    0.5f, 1.0f, // top middle
+};
+// clang-format on
 
 bool wireframeMode{false};
 void processInput(GLFWwindow* window)
@@ -28,19 +45,10 @@ void processInput(GLFWwindow* window)
     }
 }
 
-// clang-format off
-float vertices[]{
-    // position             // color
-    -0.5f,  -0.5f,  0.0f,   1.0f, 0.0f, 0.0f, // bottom left
-    0.5f,   -0.5f,  0.0f,   0.0f, 1.0f, 0.0f, // bottom right
-    0.0f,   0.5f,   0.0f,   0.0f, 0.0f, 1.0f, // top middle
-};
-
-unsigned int indices[]{
-    0, 1, 2,
-    2, 3, 1,
-};
-// clang-format on
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
 
 int main(int argc, char* argv[])
 {
@@ -89,23 +97,68 @@ int main(int argc, char* argv[])
     // works since cmake copies shaders/ into build/
     Shader shader("shaders/shader.vs", "shaders/shader.fs");
 
+    // position
     glVertexAttribPointer(0,
                           3,
                           GL_FLOAT,
                           GL_FALSE,
-                          6 * sizeof(float),
+                          8 * sizeof(float),
                           (void*)0);
     glEnableVertexAttribArray(0);
+    // color
     glVertexAttribPointer(1,
                           3,
                           GL_FLOAT,
                           GL_FALSE,
-                          6 * sizeof(float),
+                          8 * sizeof(float),
                           (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    // texture
+    glVertexAttribPointer(2,
+                          2,
+                          GL_FLOAT,
+                          GL_FALSE,
+                          8 * sizeof(float),
+                          (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     // wireframe mode
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D,
+                    GL_TEXTURE_MIN_FILTER,
+                    GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    int textureWidth, textureHeight, textureColorChannels;
+    unsigned char* textureData = stbi_load("container.jpg",
+                                           &textureWidth,
+                                           &textureHeight,
+                                           &textureColorChannels,
+                                           0);
+    if (textureData)
+    {
+        glTexImage2D(GL_TEXTURE_2D,
+                     0,
+                     GL_RGB,
+                     textureWidth,
+                     textureHeight,
+                     0,
+                     GL_RGB,
+                     GL_UNSIGNED_BYTE,
+                     textureData);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "error: failed to load texture" << std::endl;
+    }
+    stbi_image_free(textureData);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -115,10 +168,11 @@ int main(int argc, char* argv[])
         glClear(GL_COLOR_BUFFER_BIT);
 
         shader.use();
-        shader.setFloat("xOffset", 0.5f);
 
+        glBindTexture(GL_TEXTURE_2D, texture);
         glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
         glBindVertexArray(0);
 
         glfwSwapBuffers(window);
