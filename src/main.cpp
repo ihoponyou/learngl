@@ -125,18 +125,18 @@ int main(int argc, char* argv[])
     // wireframe mode
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D,
-                    GL_TEXTURE_MIN_FILTER,
-                    GL_LINEAR_MIPMAP_LINEAR);
+    unsigned int boxTexture;
+    glGenTextures(1, &boxTexture);
+    glBindTexture(GL_TEXTURE_2D, boxTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
     int textureWidth, textureHeight, textureColorChannels;
-    unsigned char* textureData = stbi_load("container.jpg",
+    stbi_set_flip_vertically_on_load(true);
+
+    unsigned char* textureData = stbi_load("assets/container.jpg",
                                            &textureWidth,
                                            &textureHeight,
                                            &textureColorChannels,
@@ -156,9 +156,45 @@ int main(int argc, char* argv[])
     }
     else
     {
-        std::cout << "error: failed to load texture" << std::endl;
+        std::cout << "error: failed to load box texture" << std::endl;
     }
     stbi_image_free(textureData);
+
+    unsigned int epicTexture;
+    glGenTextures(1, &epicTexture);
+    glBindTexture(GL_TEXTURE_2D, epicTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    textureData = stbi_load("assets/awesomeface.png",
+                            &textureWidth,
+                            &textureHeight,
+                            &textureColorChannels,
+                            0);
+    if (textureData)
+    {
+        glTexImage2D(GL_TEXTURE_2D,
+                     0,
+                     GL_RGBA,
+                     textureWidth,
+                     textureHeight,
+                     0,
+                     GL_RGBA,
+                     GL_UNSIGNED_BYTE,
+                     textureData);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "error: failed to load epic texture" << std::endl;
+    }
+    stbi_image_free(textureData);
+
+    shader.use();
+    shader.setInt("boxTexture", 0);
+    shader.setInt("epicTexture", 1);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -167,9 +203,13 @@ int main(int argc, char* argv[])
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, boxTexture);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, epicTexture);
+
         shader.use();
 
-        glBindTexture(GL_TEXTURE_2D, texture);
         glBindVertexArray(vao);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 

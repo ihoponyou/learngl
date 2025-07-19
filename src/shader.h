@@ -56,7 +56,9 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
     const char* vertexShaderSource = vertexSource.c_str();
     const char* fragmentShaderSource = fragmentSource.c_str();
 
-    std::cout << "vshader:\n" << vertexShaderSource << "\n";
+    std::cout << "----- vertex shader:\n" << vertexShaderSource << "\n";
+    std::cout << "----- fragment shader:\n"
+              << fragmentShaderSource << std::endl;
 
     unsigned int vertexShader, fragmentShader;
     int success;
