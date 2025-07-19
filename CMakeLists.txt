@@ -78,6 +78,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="${CMAKE_CURRENT_S
 #                        RESOURCE SETUP
 #####################################################################
 file(COPY "${CMAKE_CURRENT_LIST_DIR}/src/shaders" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+file(COPY "${CMAKE_CURRENT_LIST_DIR}/assets" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
 #####################################################################
 #                        PACKAGE SETUP
