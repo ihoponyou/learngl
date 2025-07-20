@@ -13,25 +13,20 @@
 // clang-format off
 float vertices[]{
     // position             // color            // texture
-    0.5f,   0.5f,   0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
-    0.5f,   -0.5f,  0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+    0.5f,   0.5f,   0.0f,   1.0f, 0.0f, 0.0f,   2.0f, 2.0f, // top right
+    0.5f,   -0.5f,  0.0f,   0.0f, 1.0f, 0.0f,   2.0f, 0.0f, // bottom right
     -0.5f,  -0.5f,  0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
-    -0.5f,   0.5f,  0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f, // top left
+    -0.5f,   0.5f,  0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 2.0f, // top left
 };
 
 unsigned int indices[]{
     0, 1, 3,
     3, 2, 1,
 };
-
-float textureCoordinates[]{
-    0.0f, 0.0f, // bottom left
-    1.0f, 0.0f, // bottom right
-    0.5f, 1.0f, // top middle
-};
 // clang-format on
 
-bool wireframeMode{false};
+float alpha{};
+bool wireframeMode{};
 void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_Q))
@@ -42,6 +37,22 @@ void processInput(GLFWwindow* window)
     {
         wireframeMode = !wireframeMode;
         glPolygonMode(GL_FRONT_AND_BACK, wireframeMode ? GL_LINE : GL_FILL);
+    }
+    if (glfwGetKey(window, GLFW_KEY_UP))
+    {
+        std::cout << alpha << "\n";
+        if (alpha < 1.0f)
+        {
+            alpha += 0.01f;
+        }
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN))
+    {
+        std::cout << alpha << "\n";
+        if (alpha > 0)
+        {
+            alpha -= 0.01f;
+        }
     }
 }
 
@@ -128,10 +139,10 @@ int main(int argc, char* argv[])
     unsigned int boxTexture;
     glGenTextures(1, &boxTexture);
     glBindTexture(GL_TEXTURE_2D, boxTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     int textureWidth, textureHeight, textureColorChannels;
     stbi_set_flip_vertically_on_load(true);
@@ -163,10 +174,10 @@ int main(int argc, char* argv[])
     unsigned int epicTexture;
     glGenTextures(1, &epicTexture);
     glBindTexture(GL_TEXTURE_2D, epicTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     textureData = stbi_load("assets/awesomeface.png",
                             &textureWidth,
@@ -209,6 +220,7 @@ int main(int argc, char* argv[])
         glBindTexture(GL_TEXTURE_2D, epicTexture);
 
         shader.use();
+        shader.setFloat("alpha", alpha);
 
         glBindVertexArray(vao);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
