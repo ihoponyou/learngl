@@ -1,33 +1,32 @@
+#include <cstdio>
 #include <iostream>
 #include <ostream>
 #include <string>
 // clang-format off
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
+#include "glm/ext/matrix_transform.hpp"
 // clang-format on
 #define STB_IMAGE_IMPLEMENTATION
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 #include "stb/stb_image.h"
 
 #include "shader.h"
 
 // clang-format off
 float vertices[]{
-    // position             // color            // texture
-    0.5f,   0.5f,   0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
-    0.5f,   -0.5f,  0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
-    -0.5f,  -0.5f,  0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
-    -0.5f,   0.5f,  0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f, // top left
+    // position             // texture
+    0.5f,   0.5f,   0.0f,   1.0f, 1.0f, // top right
+    0.5f,   -0.5f,  0.0f,   1.0f, 0.0f, // bottom right
+    -0.5f,  -0.5f,  0.0f,   0.0f, 0.0f, // bottom left
+    -0.5f,   0.5f,  0.0f,   0.0f, 1.0f, // top left
 };
 
 unsigned int indices[]{
     0, 1, 3,
     3, 2, 1,
-};
-
-float textureCoordinates[]{
-    0.0f, 0.0f, // bottom left
-    1.0f, 0.0f, // bottom right
-    0.5f, 1.0f, // top middle
 };
 // clang-format on
 
@@ -52,6 +51,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 int main(int argc, char* argv[])
 {
+
     std::string pathToExe(argv[0]);
     std::string pathToExeDir = pathToExe.substr(0, pathToExe.find_last_of('/'));
     glfwInit();
@@ -102,25 +102,17 @@ int main(int argc, char* argv[])
                           3,
                           GL_FLOAT,
                           GL_FALSE,
-                          8 * sizeof(float),
+                          5 * sizeof(float),
                           (void*)0);
     glEnableVertexAttribArray(0);
-    // color
+    // texture coordinates
     glVertexAttribPointer(1,
-                          3,
-                          GL_FLOAT,
-                          GL_FALSE,
-                          8 * sizeof(float),
-                          (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    // texture
-    glVertexAttribPointer(2,
                           2,
                           GL_FLOAT,
                           GL_FALSE,
-                          8 * sizeof(float),
-                          (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
+                          5 * sizeof(float),
+                          (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     // wireframe mode
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -208,7 +200,17 @@ int main(int argc, char* argv[])
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, epicTexture);
 
+        glm::mat4 translationMatrix{1.0f};
+        translationMatrix =
+            glm::translate(translationMatrix, glm::vec3(0.5f, -0.5f, 0.0f));
+        translationMatrix = glm::rotate(translationMatrix,
+                                        (float)glfwGetTime(),
+                                        glm::vec3(0.0f, 0.0f, 1.0f));
+
         shader.use();
+        unsigned int transformUniformLocation =
+            glGetUniformLocation(shader.id, "transform");
+        shader.setMat4("transform", translationMatrix);
 
         glBindVertexArray(vao);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -218,6 +220,10 @@ int main(int argc, char* argv[])
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(1, &vbo);
+    glDeleteBuffers(1, &ebo);
 
     glfwTerminate();
     return 0;
