@@ -1,3 +1,4 @@
+#include <cmath>
 #include <cstdio>
 #include <iostream>
 #include <ostream>
@@ -192,6 +193,8 @@ int main(int argc, char* argv[])
     {
         processInput(window);
 
+        float time = glfwGetTime();
+
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -202,10 +205,9 @@ int main(int argc, char* argv[])
 
         glm::mat4 translationMatrix{1.0f};
         translationMatrix =
+            glm::rotate(translationMatrix, time, glm::vec3(0.0f, 0.0f, 1.0f));
+        translationMatrix =
             glm::translate(translationMatrix, glm::vec3(0.5f, -0.5f, 0.0f));
-        translationMatrix = glm::rotate(translationMatrix,
-                                        (float)glfwGetTime(),
-                                        glm::vec3(0.0f, 0.0f, 1.0f));
 
         shader.use();
         unsigned int transformUniformLocation =
@@ -213,6 +215,15 @@ int main(int argc, char* argv[])
         shader.setMat4("transform", translationMatrix);
 
         glBindVertexArray(vao);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        translationMatrix = glm::mat4{1.0f};
+        translationMatrix =
+            glm::translate(translationMatrix, glm::vec3(-0.5f, 0.5f, 0.0f));
+        translationMatrix =
+            glm::scale(translationMatrix, glm::vec3(sin(time), 1.0f, 1.0f));
+        shader.setMat4("transform", translationMatrix);
+
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glBindVertexArray(0);
