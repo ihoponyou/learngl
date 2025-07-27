@@ -6,7 +6,10 @@
 // clang-format off
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
+#include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_transform.hpp"
+#include "glm/ext/vector_float3.hpp"
+#include "glm/trigonometric.hpp"
 // clang-format on
 #define STB_IMAGE_IMPLEMENTATION
 #include "glm/glm.hpp"
@@ -17,17 +20,66 @@
 #include "shader.h"
 
 // clang-format off
-float vertices[]{
-    // position             // texture
-    0.5f,   0.5f,   0.0f,   1.0f, 1.0f, // top right
-    0.5f,   -0.5f,  0.0f,   1.0f, 0.0f, // bottom right
-    -0.5f,  -0.5f,  0.0f,   0.0f, 0.0f, // bottom left
-    -0.5f,   0.5f,  0.0f,   0.0f, 1.0f, // top left
+float vertices[] = {
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
 
 unsigned int indices[]{
     0, 1, 3,
     3, 2, 1,
+};
+
+glm::vec3 cubePositions[] = {
+    glm::vec3( 0.0f,  0.0f,  0.0f), 
+    glm::vec3( 2.0f,  5.0f, -15.0f), 
+    glm::vec3(-1.5f, -2.2f, -2.5f),  
+    glm::vec3(-3.8f, -2.0f, -12.3f),  
+    glm::vec3( 2.4f, -0.4f, -3.5f),  
+    glm::vec3(-1.7f,  3.0f, -7.5f),  
+    glm::vec3( 1.3f, -2.0f, -2.5f),  
+    glm::vec3( 1.5f,  2.0f, -2.5f), 
+    glm::vec3( 1.5f,  0.2f, -1.5f), 
+    glm::vec3(-1.3f,  1.0f, -1.5f)  
 };
 // clang-format on
 
@@ -60,7 +112,9 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "learngl", NULL, NULL);
+    float screenWidth{800.0f}, screenHeight{600.0f};
+    GLFWwindow* window =
+        glfwCreateWindow(screenWidth, screenHeight, "learngl", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -189,6 +243,8 @@ int main(int argc, char* argv[])
     shader.setInt("boxTexture", 0);
     shader.setInt("epicTexture", 1);
 
+    glEnable(GL_DEPTH_TEST);
+
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
@@ -196,35 +252,42 @@ int main(int argc, char* argv[])
         float time = glfwGetTime();
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, boxTexture);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, epicTexture);
 
-        glm::mat4 translationMatrix{1.0f};
-        translationMatrix =
-            glm::rotate(translationMatrix, time, glm::vec3(0.0f, 0.0f, 1.0f));
-        translationMatrix =
-            glm::translate(translationMatrix, glm::vec3(0.5f, -0.5f, 0.0f));
+        // inverse transformation of where we want the camera
+        glm::mat4 viewMatrix{1.0f};
+        viewMatrix = glm::rotate(viewMatrix,
+                                 glm::radians(-40.0f),
+                                 glm::vec3(1.0f, 0.0f, 0.0f));
+        viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 3.0f, -3.0f));
+
+        glm::mat4 projectionMatrix{1.0f};
+        projectionMatrix =
+            glm::perspective(glm::radians(71.0f), 16.0f / 9.0f, 0.1f, 100.0f);
 
         shader.use();
-        unsigned int transformUniformLocation =
-            glGetUniformLocation(shader.id, "transform");
-        shader.setMat4("transform", translationMatrix);
+        shader.setMat4("view", viewMatrix);
+        shader.setMat4("projection", projectionMatrix);
 
         glBindVertexArray(vao);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-        translationMatrix = glm::mat4{1.0f};
-        translationMatrix =
-            glm::translate(translationMatrix, glm::vec3(-0.5f, 0.5f, 0.0f));
-        translationMatrix =
-            glm::scale(translationMatrix, glm::vec3(sin(time), 1.0f, 1.0f));
-        shader.setMat4("transform", translationMatrix);
-
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        for (int i = 0; i < 10; ++i)
+        {
+            glm::mat4 modelMatrix{1.0f};
+            modelMatrix = glm::translate(modelMatrix, cubePositions[i]);
+            if (i % 3 == 0)
+            {
+                modelMatrix = glm::rotate(modelMatrix,
+                                          time * glm::radians(-55.0f),
+                                          glm::vec3(1.0f, 1.0f, 0.0f));
+            }
+            shader.setMat4("model", modelMatrix);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         glBindVertexArray(0);
 
